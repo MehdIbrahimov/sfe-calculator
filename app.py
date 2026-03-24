@@ -7,7 +7,7 @@ st.set_page_config(page_title="SFE Calculator", layout="centered", page_icon="ðŸ
 
 # --- SFE Calculation Function ---
 def calculate_sfe(theta_d_deg, theta_g_deg):
-    GAMMA_D_TOTAL, GAMMA_D_D = 50.8, 50.8
+    GAMMA_D_TOTAL, GAMMA_D_D, GAMMA_D_P = 50.8, 50.8, 0.0
     GAMMA_G_TOTAL, GAMMA_G_D, GAMMA_G_P = 64.0, 34.0, 30.0
 
     theta_d = math.radians(theta_d_deg)
@@ -44,7 +44,7 @@ with col2:
 # Buttons
 btn_col1, btn_col2 = st.columns([1, 3])
 with btn_col1:
-    if st.button("Add Trial", type="primary", use_container_width=True):
+    if st.button("Add Trial", type="primary", width='stretch'):
         total, disp, polar = calculate_sfe(d_val, g_val)
         trial_num = len(st.session_state.data) + 1
         
@@ -59,7 +59,7 @@ with btn_col1:
         })
 
 with btn_col2:
-    if st.button("Clear Data", use_container_width=False):
+    if st.button("Clear Data", width='content'):
         st.session_state.data = []
         st.rerun() # Refresh the page to clear everything
 
@@ -77,7 +77,7 @@ if st.session_state.data:
     # We swap st.dataframe for st.data_editor and add num_rows="dynamic"
     edited_df = st.data_editor(
         df, 
-        use_container_width=True, 
+        width='stretch', 
         num_rows="dynamic" # This is the magic command that enables row deletion
     )
     
@@ -92,7 +92,7 @@ if st.session_state.data:
     st.download_button(
         label="ðŸ’¾ Download Data as CSV",
         data=csv,
-        file_name="chitosan_sfe_data.csv",
+        file_name="sfe_data.csv",
         mime="text/csv",
     )
     # --------------------------
