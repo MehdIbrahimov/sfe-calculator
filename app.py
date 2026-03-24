@@ -70,9 +70,32 @@ if st.session_state.data:
     # Convert list of dictionaries to a Pandas DataFrame
     df = pd.DataFrame(st.session_state.data)
     
-    # 1. Show Data Table
+# 1. Show Data Table (Now Editable!)
     st.subheader("Data Table")
-    st.dataframe(df, use_container_width=True, hide_index=True)
+    st.markdown("💡 *Tip: Click the checkbox on the far left of any row and press the **Delete** key (or use the trash icon at the top right of the table) to remove a bad trial.*")
+    
+    # We swap st.dataframe for st.data_editor and add num_rows="dynamic"
+    edited_df = st.data_editor(
+        df, 
+        use_container_width=True, 
+        num_rows="dynamic" # This is the magic command that enables row deletion
+    )
+    
+    # Instantly sync the edited table back to the app's memory so the graph updates!
+    st.session_state.data = edited_df.to_dict('records')
+    
+    # --- NEW EXPORT FEATURE ---
+    # Convert the dataframe to a CSV format
+    csv = df.to_csv(index=False).encode('utf-8')
+    
+    # Create the download button
+    st.download_button(
+        label="💾 Download Data as CSV",
+        data=csv,
+        file_name="chitosan_sfe_data.csv",
+        mime="text/csv",
+    )
+    # --------------------------
     
     # 2. Show Statistics
     col_mean, col_std = st.columns(2)
