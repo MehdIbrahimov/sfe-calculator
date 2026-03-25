@@ -6,20 +6,33 @@ import math
 st.set_page_config(page_title="SFE Calculator", layout="centered", page_icon="🧪")
 
 # --- SFE Calculation Function ---
-def calculate_sfe(theta_d_deg, theta_g_deg):
-    GAMMA_D_TOTAL, GAMMA_D_D, GAMMA_D_P = 50.8, 50.8, 0.0
-    GAMMA_G_TOTAL, GAMMA_G_D, GAMMA_G_P = 64.0, 34.0, 30.0
-
+def calculate_sfe(theta_d_deg, theta_g_deg, gamma_d_tot, gamma_d_d, gamma_d_p, gamma_g_tot, gamma_g_d, gamma_g_p):
     theta_d = math.radians(theta_d_deg)
     theta_g = math.radians(theta_g_deg)
 
-    W_d = GAMMA_D_TOTAL * (1 + math.cos(theta_d))
-    gamma_s_d = (W_d ** 2) / (4 * GAMMA_D_D)
+    # Calculate the Work of Adhesion divided by 2 for each liquid
+    W_d = (gamma_d_tot * (1 + math.cos(theta_d))) / 2.0
+    W_g = (gamma_g_tot * (1 + math.cos(theta_g))) / 2.0
 
-    W_g = GAMMA_G_TOTAL * (1 + math.cos(theta_g))
-    numerator = W_g - 2 * math.sqrt(gamma_s_d * GAMMA_G_D)
+    # Get the square roots of all liquid constants
+    sq_d_d = math.sqrt(gamma_d_d)
+    sq_d_p = math.sqrt(gamma_d_p)
+    sq_g_d = math.sqrt(gamma_g_d)
+    sq_g_p = math.sqrt(gamma_g_p)
+
+    # Solve the system of linear equations using Cramer's rule
+    determinant = (sq_d_d * sq_g_p) - (sq_d_p * sq_g_d)
     
-    gamma_s_p = 0.0 if numerator < 0 else (numerator / (2 * math.sqrt(GAMMA_G_P))) ** 2
+    if determinant == 0:
+        return 0.0, 0.0, 0.0 # Failsafe to prevent division by zero
+
+    sq_s_d = ((W_d * sq_g_p) - (W_g * sq_d_p)) / determinant
+    sq_s_p = ((W_g * sq_d_d) - (W_d * sq_g_d)) / determinant
+
+    # Calculate final energies (force to 0 if the root is mathematically negative)
+    gamma_s_d = sq_s_d**2 if sq_s_d > 0 else 0.0
+    gamma_s_p = sq_s_p**2 if sq_s_p > 0 else 0.0
+
     gamma_s_total = gamma_s_d + gamma_s_p
 
     return gamma_s_total, gamma_s_d, gamma_s_p
@@ -38,14 +51,20 @@ col1, col2 = st.columns(2)
 
 with col1:
     d_val = st.number_input("Diiodomethane Angle (°)", min_value=0.0, max_value=180.0, value=45.0, step=0.1)
+    d_tot = st.number_input("Diiodomethane Total Surface Tension (mN/m)", min_value=0.0, max_value=100.0, value=50.0, step=0.1)
+    d_d = st.number_input("Diiodomethane Dispersive Surface Tension (mN/m)", min_value=0.0, max_value=100.0, value=47.4, step=0.1)
+    d_p = st.number_input("Diiodomethane Polar Surface Tension (mN/m)", min_value=0.0, max_value=100.0, value=2.6, step=0.1)
 with col2:
     g_val = st.number_input("Glycerol Angle (°)", min_value=0.0, max_value=180.0, value=60.0, step=0.1)
+    g_tot = st.number_input("Glycerol Total Surface Tension (mN/m)", min_value=0.0, max_value=100.0, value=64.0, step=0.1)
+    g_d = st.number_input("Glycerol Dispersive Surface Tension (mN/m)", min_value=0.0, max_value=100.0, value=34.0, step=0.1)
+    g_p = st.number_input("Glycerol Polar Surface Tension (mN/m)", min_value=0.0, max_value=100.0, value=30.0, step=0.1)
 
 # Buttons
 btn_col1, btn_col2 = st.columns([1, 3])
 with btn_col1:
     if st.button("Add Trial", type="primary", width='stretch'):
-        total, disp, polar = calculate_sfe(d_val, g_val)
+        total, disp, polar = calculate_sfe(d_val, g_val, d_tot, d_d, d_p, g_tot, g_d, g_p)
         trial_num = len(st.session_state.data) + 1
         
         # Append the new data to our session state
