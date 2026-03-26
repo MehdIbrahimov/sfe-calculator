@@ -46,6 +46,24 @@ if "data" not in st.session_state:
     st.session_state.data = []
 
 # --- Input Section ---
+# --- Import Section ---
+with st.expander("📂 Import Previous Data"):
+    uploaded_file = st.file_uploader("Upload a previously saved CSV file", type=["csv"])
+    
+    if uploaded_file is not None:
+        if st.button("Load Data (Overrides current table)", type="secondary"):
+            try:
+                # Read the CSV with Pandas
+                df_imported = pd.read_csv(uploaded_file)
+                
+                # Convert it back to a dictionary and save it to the app's memory
+                st.session_state.data = df_imported.to_dict('records')
+                
+                # Refresh the app to show the new data
+                st.rerun()
+            except Exception as e:
+                st.error(f"Error loading file: {e}. Make sure it's a valid SFE CSV!")
+
 st.subheader("Add a Measurement")
 col1, col2 = st.columns(2)
 
@@ -125,6 +143,6 @@ if st.session_state.data:
     col_std.metric("Standard Deviation", f"{std_total:.2f} mN/m" if len(df) > 1 else "--")
     
     # 3. Show Graph
-    st.subheader("Total SFE vs Dispersive Part")
+    st.subheader("Dispersive vs Polar Part")
     # Streamlit's native scatter chart makes this a one-liner!
-    st.scatter_chart(df, x="Total SFE", y="Dispersive", color="#FF4B4B")
+    st.scatter_chart(df, x="Dispersive", y="Polar", color="#FF4B4B")
